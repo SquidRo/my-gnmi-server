@@ -4,14 +4,7 @@
 # Utility APIs.
 #
 
-import subprocess
-import json
-import logging
-import inspect
-import sys
-import os
-import time
-import functools
+import subprocess, json, logging, inspect, sys, os, time, functools
 
 CFGDB_TABLE_NAME_ACL            = 'ACL_TABLE'
 CFGDB_TABLE_NAME_RULE           = 'ACL_RULE'
@@ -48,13 +41,21 @@ CFG_PC_CMD_TMPL      = CFG_WRITE_DB_CMD_TMPL.format(CFGDB_TABLE_NAME_PC)
 RULE_MAX_PRI         = 10000 # refer to acl_loader
 RULE_MIN_PRI         = 1
 
-DBG_MODE  = 1
-DBG_PERF  = 1
+TAG_SKIP_QOS = 'IS_SKIP_QOS'
+TAG_DBG_PERF = 'DBG_PERF'
+
+DBG_FLG_TBL = {
+    TAG_DBG_PERF : 1,
+}
+
+
+def utl_is_flag_on(flg_name):
+    return flg_name in DBG_FLG_TBL and DBG_FLG_TBL[flg_name] > 0
+
+def utl_set_flag(flg_name, val):
+    DBG_FLG_TBL[flg_name] = val
 
 def utl_log(str, lvl = logging.DEBUG, c_lvl=1):
-    if DBG_MODE == 1:
-        print str
-
     f1 = sys._getframe(c_lvl)
 
     if f1:
@@ -81,7 +82,7 @@ def utl_err(str):
 def utl_timeit(f):
     @functools.wraps(f)
     def timed(*args, **kw):
-        if DBG_PERF:
+        if utl_is_flag_on(TAG_DBG_PERF):
             t_beg = time.time()
             result = f (*args, **kw)
             t_end = time.time()
@@ -96,7 +97,7 @@ def utl_timeit(f):
 def utl_log_outer(f):
     @functools.wraps(f)
     def wrapped(*args, **kw):
-        if DBG_PERF:
+        if utl_is_flag_on(TAG_DBG_PERF):
             utl_log("beg ==================", logging.CRITICAL, 3)
             result = f (*args, **kw)
             utl_log("end ==================", logging.CRITICAL, 3)

@@ -20,6 +20,22 @@ SWSS_CFG_TMPL_FDB ="""
 ]
 """
 
+SONIC_QOS_TBL = [
+    util_utl.CFGDB_TABLE_NAME_TC2Q_MAP,
+    util_utl.CFGDB_TABLE_NAME_DSCP2TC_MAP,
+    util_utl.CFGDB_TABLE_NAME_QUEUE,
+    util_utl.CFGDB_TABLE_NAME_SCHDLR,
+    util_utl.CFGDB_TABLE_NAME_TC2PG_MAP,
+    util_utl.CFGDB_TABLE_NAME_MAP_PFC_P2Q,
+    util_utl.CFGDB_TABLE_NAME_PORT_QOS_MAP,
+    util_utl.CFGDB_TABLE_NAME_WRED_PROFILE,
+]
+
+SONIC_VXLAN_TBL = [
+    util_utl.CFGDB_TABLE_NAME_VXLAN_TUNNEL,
+    util_utl.CFGDB_TABLE_NAME_VXLAN_TUNNEL_MAP,
+]
+
 
 class oc_subobj_sonic(object):
     def __init__(self, path):
@@ -59,18 +75,7 @@ class openconfig_sonic(object):
     def __init__(self, path_helper):
         path_helper.register([SONIC_ROOT_PATH], self)
         self.dispatch_tbl = {}
-        reg_path = {
-            util_utl.CFGDB_TABLE_NAME_TC2Q_MAP,
-            util_utl.CFGDB_TABLE_NAME_DSCP2TC_MAP,
-            util_utl.CFGDB_TABLE_NAME_QUEUE,
-            util_utl.CFGDB_TABLE_NAME_SCHDLR,
-            util_utl.CFGDB_TABLE_NAME_TC2PG_MAP,
-            util_utl.CFGDB_TABLE_NAME_MAP_PFC_P2Q,
-            util_utl.CFGDB_TABLE_NAME_PORT_QOS_MAP,
-            util_utl.CFGDB_TABLE_NAME_WRED_PROFILE,
-            util_utl.CFGDB_TABLE_NAME_VXLAN_TUNNEL,
-            util_utl.CFGDB_TABLE_NAME_VXLAN_TUNNEL_MAP,
-            }
+        reg_path = SONIC_QOS_TBL + SONIC_VXLAN_TBL
 
         for path in reg_path:
             self.dispatch_tbl[path] = oc_subobj_sonic('/'.join(['', SONIC_ROOT_PATH, path]))
@@ -105,6 +110,12 @@ def sonic_get_sonic_db_info(root_yph, path_ar, key_ar, disp_args):
 #
 # To set sonic db settings
 def sonic_set_sonic_db(root_yph, pkey_ar, val, is_create, disp_args):
+    if util_utl.utl_is_flag_on(util_utl.TAG_SKIP_QOS):
+        for tbl in SONIC_QOS_TBL:
+            if tbl in val:
+                util_utl.utl_log('SKIP QOS: ' + val)
+                return True
+
     exec_cmd = 'sonic-cfggen -a \'%s\' --write-to-db' % val
     ret_val = util_utl.utl_execute_cmd(exec_cmd)
     return ret_val

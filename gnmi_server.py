@@ -436,12 +436,17 @@ class gNMITarget:
 def main():
     parser = argparse.ArgumentParser()
     parserGrp = parser.add_argument_group("secure grpc")
-    parser.add_argument('targetURL', help="target url, typically localhost:<port>")
     parserGrp.add_argument('--tls', action="store_true", help="enable tls connection")
     parserGrp.add_argument('--cert', help="path to the certificate")
     parserGrp.add_argument('--pvtkey', help="path to the private key file")
+    parser.add_argument('targetURL', help="target url, typically localhost:<port>")
     parser.add_argument('--log-level', help="set log level", default =3, type=int)
+    parser.add_argument('--skip-qos', action="store_true", help="skip qos setting")
     args = parser.parse_args()
+
+
+    if args.skip_qos:
+        util_utl.utl_set_flag(util_utl.TAG_SKIP_QOS, 1)
 
     #print args
     log_path = '/var/log/gnmi_server.log'
@@ -463,6 +468,11 @@ def main():
 
     # remove any log handlers created automatically
     logging.getLogger().handlers = []
+
+    # make console ouput available in syslog for debug
+    if log_lvl == logging.DEBUG:
+       console = logging.StreamHandler()
+       logging.getLogger().addHandler(console)
 
     handler = logging.handlers.RotatingFileHandler(log_path, maxBytes=1024000, backupCount=2)
     handler.setFormatter(logging.Formatter(fmt = log_fmt, datefmt='%y-%m-%d %H:%M:%S'))
