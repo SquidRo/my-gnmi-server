@@ -96,6 +96,7 @@ def bcm_execute_diag_cmd(exe_cmd):
     return ret_val
 
 # get a dictionary mapping port name ("Ethernet48") to a physical port number
+# refer to sfputilbase.py
 def bcm_get_diag_port_map():
     global BCM_PHY_PORT_MAP, BCM_USR_PORT_MAP, BCM_PORT_MAP_INIT
 
@@ -104,7 +105,10 @@ def bcm_get_diag_port_map():
     exe_cmd = 'docker exec -i syncd cat /usr/share/sonic/hwsku/port_config.ini'
     (is_ok, output) = util_utl.utl_get_execute_cmd_output(exe_cmd)
     if is_ok:
+        port_pos_in_file = 0
+
         # Default column definition
+        # index means number on the front panel
         titles = ['name', 'lanes', 'alias', 'index']
         output = output.splitlines()
         BCM_PHY_PORT_MAP = {}
@@ -124,10 +128,13 @@ def bcm_get_diag_port_map():
                    continue
                 data[titles[i]] = item
             data.setdefault('alias', name)
+            data['pos_idx'] = str(port_pos_in_file)
             BCM_PHY_PORT_MAP[name] = data
 
+            port_pos_in_file += 1
+
         for key in BCM_PHY_PORT_MAP.keys():
-            BCM_USR_PORT_MAP['xe'+BCM_PHY_PORT_MAP[key]['index']] = key
+            BCM_USR_PORT_MAP['xe'+BCM_PHY_PORT_MAP[key]['pos_idx']] = key
 
         BCM_PORT_MAP_INIT = True
 
@@ -139,7 +146,7 @@ def bcm_get_port_name(is_phy, src_port_name):
     map_tbl = BCM_PHY_PORT_MAP if is_phy else BCM_USR_PORT_MAP
     if src_port_name in map_tbl:
         if 'index' in map_tbl[src_port_name]:
-            ret_port_name = 'xe%s' % map_tbl[src_port_name]['index']
+            ret_port_name = 'xe%s' % map_tbl[src_port_name]['pos_idx']
         else:
             ret_port_name = map_tbl[src_port_name]
     else:
