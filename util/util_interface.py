@@ -135,7 +135,7 @@ def interface_get_ip4_nbr_output():
             #  192.168.200.10 dev eth0 lladdr a0:36:9f:8d:52:fa STALE
             #  192.168.200.66 dev eth0 lladdr 34:64:a9:2b:2e:ad REACHABLE
             #  192.168.200.1 dev eth0  FAILED
-            if tmp_line[3] == 'FAILED': continue
+            if tmp_line[3] != 'lladdr': continue
             inf_name = tmp_line[2]
             if inf_name not in ret_output:
                 ret_output[inf_name] = []
@@ -210,7 +210,7 @@ def interface_fill_inf_nbr_info(oc_inf, inf_name, out_tbl):
 
             oc_nbr.config.link_layer_address = nbr_info[4]
 
-            if nbr_info[5] == "PERANENT":
+            if nbr_info[5] != "PERMANENT":
                 oc_nbr.state._set_origin('DYNAMIC')
             else:
                 oc_nbr.state._set_origin('STATIC')
