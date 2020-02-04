@@ -20,7 +20,7 @@ from util import util_lldp, util_interface, util_platform, util_utl, \
                  util_nwi, util_lr, util_acl, util_sys, util_qos, util_bcm, \
                  util_sonic
 
-import logging, re, pdb, swsssdk
+import logging, re, pdb, swsssdk, time
 
 # Dispatch table for openconfig class and info function
 ocTable = {
@@ -120,6 +120,24 @@ class ocDispatcher:
         self.my_args.appdb.connect(self.my_args.appdb.COUNTERS_DB)
         self.my_args.appdb.connect(self.my_args.appdb.ASIC_DB)
 
+        # check if port table is ready
+        is_pcfg_done = False
+        chk_cnt = 0
+        while True:
+            pcfg_val = self.my_args.appdb.get_all(self.my_args.appdb.APPL_DB, "PORT_TABLE:PortConfigDone")
+
+            is_pcfg_done = pcfg_val != None
+            chk_cnt += 1
+
+            if is_pcfg_done or chk_cnt % 3 == 1:
+                util_utl.utl_log(
+                    "PORT TABLE was%sready...(%s)" % ([" not ", " "][is_pcfg_done], chk_cnt),
+                    logging.CRITICAL)
+
+            if is_pcfg_done: break
+
+            time.sleep(10)
+
         # create the full yang tree
         # for performance, only update the tree node requested
         self.oc_yph = YANGPathHelper()
@@ -142,6 +160,8 @@ class ocDispatcher:
         # check if new teammgrd is used
         test_cmd = 'docker run --rm=true --privileged=true --entrypoint="/bin/bash" "docker-teamd" -c "[ -f /usr/bin/teammgrd ]"'
         util_interface.IS_NEW_TEAMMGRD = util_utl.utl_execute_cmd(test_cmd)
+
+
 
     #def CreateAllInterfaces(self, is_dbg_test):
     #    return util_interface.interface_create_all_infs(self.oc_yph, is_dbg_test)
